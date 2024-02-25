@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import dataclasses as dc
+import os
+import zipfile
 
 import huggingface_hub as hh
 import pandas as pd
 from huggingface_hub.hf_api import DatasetInfo, ModelInfo
 from pandas import DataFrame
+from tqdm.auto import tqdm
 
 MODELCARD_FEATURES = {
     "tags": "card_tags",
@@ -55,6 +58,7 @@ def get_multivalued(card: dict | None, key: str) -> list:
 def models() -> DataFrame:
     """Create a DataFrame with all models."""
     models = (to_dict(model) for model in hh.list_models(full=True, cardData=True))
+    models = tqdm(models, desc="Fetching model metadata")
     df = pd.DataFrame(models)
 
     for key, name in MODELCARD_FEATURES.items():
@@ -70,7 +74,8 @@ def models() -> DataFrame:
 def datasets() -> DataFrame:
     """Create a DataFrame with all datasets."""
     dsets = (to_dict(ds) for ds in hh.list_datasets(full=True))
-    df = pd.DataFrame(dsets)
+    dsets = tqdm(dsets, desc="Fetching dataset metadata")
+    df = pd.DataFrame(tqdm(dsets))
 
     for key, name in DATACARD_FEATURES.items():
         df[name] = df.card_data.apply(lambda card: get_multivalued(card, key))
@@ -85,3 +90,8 @@ def models_datasets() -> DataFrame:
     ms = models()
     ds = datasets()
     return pd.concat([ms, ds], axis=0)
+
+
+if __name__ == "__main__":
+    df = models_datasets()
+    df.to_csv("./datasets/hfhub.csv.zip", index=False)
