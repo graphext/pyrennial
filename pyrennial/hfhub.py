@@ -88,7 +88,9 @@ def datasets() -> DataFrame:
 def models_datasets() -> DataFrame:
     """One long dataframe with models and datasets."""
     ms = models()
+    ms["type"] = "model"
     ds = datasets()
+    ds["type"] = "dataset"
     return pd.concat([ms, ds], axis=0)
 
 
